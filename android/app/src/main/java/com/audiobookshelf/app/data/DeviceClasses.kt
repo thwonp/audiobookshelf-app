@@ -149,59 +149,61 @@ data class PlayItemRequestPayload(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class DeviceSettings(
-        var disableAutoRewind: Boolean,
-        var enableAltView: Boolean,
-        var allowSeekingOnMediaControls: Boolean,
-        var jumpBackwardsTime: Int,
-        var jumpForwardTime: Int,
-        var enableMp3IndexSeeking: Boolean,
-        var disableShakeToResetSleepTimer: Boolean,
-        var shakeSensitivity: ShakeSensitivitySetting,
-        var lockOrientation: LockOrientationSetting,
-        var hapticFeedback: HapticFeedbackSetting,
-        var autoSleepTimer: Boolean,
-        var autoSleepTimerStartTime: String,
-        var autoSleepTimerEndTime: String,
-        var autoSleepTimerAutoRewind: Boolean,
-        var autoSleepTimerAutoRewindTime: Long, // Time in milliseconds
-        var sleepTimerLength: Long, // Time in milliseconds
-        var disableSleepTimerFadeOut: Boolean,
-        var disableSleepTimerResetFeedback: Boolean,
-        var enableSleepTimerAlmostDoneChime: Boolean,
-        var languageCode: String,
-        var downloadUsingCellular: DownloadUsingCellularSetting,
-        var streamingUsingCellular: StreamingUsingCellularSetting,
-        var androidAutoBrowseLimitForGrouping: Int,
-        var androidAutoBrowseSeriesSequenceOrder: AndroidAutoBrowseSeriesSequenceOrderSetting
+  var disableAutoRewind:Boolean,
+  var enableAltView:Boolean,
+  var allowSeekingOnMediaControls:Boolean,
+  var jumpBackwardsTime:Int,
+  var jumpForwardTime:Int,
+  var enableMp3IndexSeeking:Boolean,
+  var disableShakeToResetSleepTimer:Boolean,
+  var shakeSensitivity: ShakeSensitivitySetting,
+  var lockOrientation: LockOrientationSetting,
+  var hapticFeedback: HapticFeedbackSetting,
+  var autoSleepTimer: Boolean,
+  var multiChapterSleep: Boolean,
+  var autoSleepTimerStartTime: String,
+  var autoSleepTimerEndTime: String,
+  var autoSleepTimerAutoRewind: Boolean,
+  var autoSleepTimerAutoRewindTime: Long, //Time in milliseconds
+  var sleepTimerLength: Long, // Time in milliseconds
+  var disableSleepTimerFadeOut: Boolean,
+  var disableSleepTimerResetFeedback: Boolean,
+  var enableSleepTimerAlmostDoneChime: Boolean,
+  var languageCode: String,
+  var downloadUsingCellular: DownloadUsingCellularSetting,
+  var streamingUsingCellular: StreamingUsingCellularSetting,
+  var androidAutoBrowseLimitForGrouping: Int,
+  var androidAutoBrowseSeriesSequenceOrder: AndroidAutoBrowseSeriesSequenceOrderSetting
 ) {
   companion object {
     // Static method to get default device settings
     fun default(): DeviceSettings {
       return DeviceSettings(
-              disableAutoRewind = false,
-              enableAltView = true,
-              allowSeekingOnMediaControls = false,
-              jumpBackwardsTime = 10,
-              jumpForwardTime = 10,
-              enableMp3IndexSeeking = false,
-              disableShakeToResetSleepTimer = false,
-              shakeSensitivity = ShakeSensitivitySetting.MEDIUM,
-              lockOrientation = LockOrientationSetting.NONE,
-              hapticFeedback = HapticFeedbackSetting.LIGHT,
-              autoSleepTimer = false,
-              autoSleepTimerStartTime = "22:00",
-              autoSleepTimerEndTime = "06:00",
-              sleepTimerLength = 900000L, // 15 minutes
-              autoSleepTimerAutoRewind = false,
-              autoSleepTimerAutoRewindTime = 300000L, // 5 minutes
-              disableSleepTimerFadeOut = false,
-              disableSleepTimerResetFeedback = false,
-              enableSleepTimerAlmostDoneChime = false,
-              languageCode = "en-us",
-              downloadUsingCellular = DownloadUsingCellularSetting.ALWAYS,
-              streamingUsingCellular = StreamingUsingCellularSetting.ALWAYS,
-              androidAutoBrowseLimitForGrouping = 100,
-              androidAutoBrowseSeriesSequenceOrder = AndroidAutoBrowseSeriesSequenceOrderSetting.ASC
+        disableAutoRewind = false,
+        enableAltView = true,
+        allowSeekingOnMediaControls = false,
+        jumpBackwardsTime = 10,
+        jumpForwardTime = 10,
+        enableMp3IndexSeeking = false,
+        disableShakeToResetSleepTimer = false,
+        shakeSensitivity = ShakeSensitivitySetting.MEDIUM,
+        lockOrientation = LockOrientationSetting.NONE,
+        hapticFeedback = HapticFeedbackSetting.LIGHT,
+        multiChapterSleep = false,
+        autoSleepTimer = false,
+        autoSleepTimerStartTime = "22:00",
+        autoSleepTimerEndTime = "06:00",
+        sleepTimerLength = 900000L, // 15 minutes
+        autoSleepTimerAutoRewind = false,
+        autoSleepTimerAutoRewindTime = 300000L, // 5 minutes
+        disableSleepTimerFadeOut = false,
+        disableSleepTimerResetFeedback = false,
+        enableSleepTimerAlmostDoneChime = false,
+        languageCode = "en-us",
+        downloadUsingCellular = DownloadUsingCellularSetting.ALWAYS,
+        streamingUsingCellular = StreamingUsingCellularSetting.ALWAYS,
+        androidAutoBrowseLimitForGrouping = 100,
+        androidAutoBrowseSeriesSequenceOrder = AndroidAutoBrowseSeriesSequenceOrderSetting.ASC
       )
     }
   }
