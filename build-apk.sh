@@ -15,11 +15,13 @@ cd "$SCRIPT_DIR"
 echo "==> Building container image (cached after first run)..."
 podman build -f Dockerfile.build -t "$IMAGE" .
 
+mkdir -p "$HOME/.android"
 echo "==> Running build inside container..."
 podman run --rm \
   -v "$SCRIPT_DIR:/app:Z" \
   -v "$HOME/.gradle:/root/.gradle:Z" \
   -v "$HOME/.npm:/root/.npm:Z" \
+  -v "$HOME/.android:/root/.android:Z" \
   "$IMAGE" \
   bash -c "
     set -euo pipefail
