@@ -121,6 +121,10 @@ class DbService {
   getMediaItemHistory(mediaId) {
     return AbsDatabase.getMediaItemHistory({ mediaId })
   }
+
+  saveScanResult(localLibraryItem) {
+    return AbsDatabase.saveScanResult(localLibraryItem)
+  }
 }
 
 export default ({ app, store }, inject) => {

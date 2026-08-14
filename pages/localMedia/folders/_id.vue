@@ -4,6 +4,10 @@
       <p class="text-base font-semibold">{{ $strings.LabelFolder }}: {{ folderName }}</p>
       <div class="flex-grow" />
 
+      <button v-if="!isInternalStorage" class="text-sm px-3 py-1 rounded bg-bg-hover hover:bg-bg-hover/80 transition-colors mr-2 disabled:opacity-50" :disabled="scanning" @click="scanForBooks">
+        <span v-if="scanning" class="material-symbols animate-spin text-sm align-middle mr-1">progress_activity</span>
+        {{ scanning ? 'Scanning…' : 'Scan for books' }}
+      </button>
       <span v-if="dialogItems.length" class="material-symbols text-2xl" @click="showDialog = true">more_vert</span>
     </div>
 
@@ -72,6 +76,7 @@
 import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { AbsFileSystem } from '@/plugins/capacitor'
+import { nanoid } from 'nanoid'
 
 export default {
   asyncData({ params, query }) {
@@ -88,7 +93,8 @@ export default {
       sortBySize: 0,
       isSelectMode: false,
       selectedItemIds: [],
-      isDeleting: false
+      isDeleting: false,
+      scanning: false
     }
   },
   computed: {
@@ -232,6 +238,132 @@ export default {
         size += item.localFiles[i].size
       }
       return size
+    },
+    async scanForBooks() {
+      const libraryId = this.$store.state.libraries.currentLibraryId
+      const user = this.$store.state.user.user
+      const serverConnectionConfig = this.$store.state.user.serverConnectionConfig
+
+      if (!user || !libraryId || !serverConnectionConfig) {
+        await Dialog.alert({ title: 'Not connected', message: 'Connect to a server and select a library before scanning.' })
+        return
+      }
+
+      this.scanning = true
+      let found = 0
+      let skipped = 0
+      let unmatched = 0
+
+      try {
+        const { subfolders } = await AbsFileSystem.getFolderSubfolders({ folderId: this.folderId })
+
+        for (const subfolder of subfolders) {
+          const searchQuery = encodeURIComponent(subfolder.name)
+          const searchResult = await this.$nativeHttp.get(`/api/libraries/${libraryId}/search?q=${searchQuery}&limit=1`).catch(() => null)
+          const bookResults = searchResult?.book || []
+          if (!bookResults.length) {
+            unmatched++
+            continue
+          }
+
+          const serverItem = await this.$nativeHttp.get(`/api/items/${bookResults[0].libraryItem.id}?expanded=1`).catch(() => null)
+          if (!serverItem) {
+            unmatched++
+            continue
+          }
+
+          const serverTracks = serverItem.media?.tracks || []
+          const localFiles = []
+          const audioTracks = []
+
+          for (const track of serverTracks) {
+            const trackFilename = (track.metadata?.filename || track.title || '').toLowerCase()
+            const localFile = subfolder.files.find((f) => f.filename.toLowerCase() === trackFilename)
+            if (!localFile) continue
+
+            const localFileId = `local_${nanoid()}`
+            localFiles.push({
+              id: localFileId,
+              filename: localFile.filename,
+              contentUrl: localFile.contentUrl,
+              basePath: subfolder.contentUrl,
+              absolutePath: `${this.folder.absolutePath}/${subfolder.name}/${localFile.filename}`,
+              mimeType: localFile.mimeType || 'audio/mpeg',
+              size: localFile.size
+            })
+
+            audioTracks.push({
+              index: track.index,
+              startOffset: track.startOffset,
+              duration: track.duration,
+              title: track.title || localFile.filename,
+              contentUrl: localFile.contentUrl,
+              mimeType: localFile.mimeType || track.mimeType || 'audio/mpeg',
+              metadata: {
+                filename: localFile.filename,
+                ext: localFile.filename.includes('.') ? localFile.filename.split('.').pop() : '',
+                path: `${this.folder.absolutePath}/${subfolder.name}/${localFile.filename}`,
+                relPath: `${subfolder.name}/${localFile.filename}`,
+                size: localFile.size
+              },
+              isLocal: true,
+              localFileId
+            })
+          }
+
+          if (!audioTracks.length) {
+            unmatched++
+            continue
+          }
+
+          audioTracks.sort((a, b) => a.index - b.index)
+
+          const localLibraryItem = {
+            id: `local_${nanoid()}`,
+            folderId: this.folderId,
+            basePath: this.folder.absolutePath,
+            absolutePath: `${this.folder.absolutePath}/${subfolder.name}`,
+            contentUrl: subfolder.contentUrl,
+            isInvalid: false,
+            mediaType: 'book',
+            media: {
+              ...serverItem.media,
+              tracks: audioTracks,
+              audioFiles: undefined
+            },
+            localFiles,
+            coverContentUrl: null,
+            coverAbsolutePath: null,
+            isLocal: true,
+            serverConnectionConfigId: serverConnectionConfig.id,
+            serverAddress: serverConnectionConfig.address,
+            serverUserId: user.id,
+            libraryItemId: serverItem.id
+          }
+
+          const result = await this.$db.saveScanResult(localLibraryItem).catch(() => null)
+          if (result?.alreadyExists) {
+            skipped++
+          } else if (result) {
+            found++
+          } else {
+            unmatched++
+          }
+        }
+      } catch (e) {
+        console.error('[scanForBooks] error', e)
+        this.$toast.error('Scan failed: ' + (e?.message || 'unknown error'))
+      }
+
+      this.scanning = false
+      await Dialog.alert({
+        title: 'Scan complete',
+        message: `Found: ${found} • Already existed: ${skipped} • Unmatched: ${unmatched}`
+      })
+
+      if (found > 0) {
+        await this.init()
+      }
     },
     async removeFolder() {
       var deleteMessage = 'Are you sure you want to remove this folder? (does not delete anything in your file system)'

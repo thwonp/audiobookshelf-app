@@ -391,6 +391,8 @@ class AbsDatabaseWeb extends WebPlugin {
       ]
     }
   }
+
+  async saveScanResult() { }
 }
 
 const AbsDatabase = registerPlugin('AbsDatabase', {

@@ -307,6 +307,44 @@ class AbsFileSystem : Plugin() {
     }
   }
 
+  @PluginMethod
+  fun getFolderSubfolders(call: PluginCall) {
+    val folderId = call.data.getString("folderId") ?: return call.reject("folderId required")
+    val folder = DeviceManager.dbManager.getLocalFolder(folderId)
+      ?: return call.reject("Folder not found: $folderId")
+
+    val treeDoc = DocumentFileCompat.fromUri(mainActivity, Uri.parse(folder.contentUrl))
+    if (treeDoc == null || !treeDoc.exists()) {
+      return call.reject("Could not open folder tree: ${folder.contentUrl}")
+    }
+
+    val subfolders = JSArray()
+    treeDoc.listFiles().forEach { child ->
+      if (!child.isDirectory) return@forEach
+
+      val files = JSArray()
+      child.listFiles().forEach { file ->
+        if (!file.isFile) return@forEach
+        val fileObj = JSObject()
+        fileObj.put("filename", file.name ?: "")
+        fileObj.put("contentUrl", file.uri.toString())
+        fileObj.put("mimeType", file.mimeType ?: "")
+        fileObj.put("size", file.length())
+        files.put(fileObj)
+      }
+
+      val subfolder = JSObject()
+      subfolder.put("name", child.name ?: "")
+      subfolder.put("contentUrl", child.uri.toString())
+      subfolder.put("files", files)
+      subfolders.put(subfolder)
+    }
+
+    val ret = JSObject()
+    ret.put("subfolders", subfolders)
+    call.resolve(ret)
+  }
+
   private fun folderPickerString(key: String, defaultValue: String): String =
           mainActivity.getSharedPreferences(FOLDER_PICKER_PREFERENCES, Context.MODE_PRIVATE)
                   .getString(key, defaultValue) ?: defaultValue

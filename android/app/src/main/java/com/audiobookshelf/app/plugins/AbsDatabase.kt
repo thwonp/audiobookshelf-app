@@ -575,6 +575,27 @@ class AbsDatabase : Plugin() {
   }
 
   @PluginMethod
+  fun saveScanResult(call: PluginCall) {
+    val json = call.data.toString()
+    val item = try {
+      jacksonMapper.readValue<LocalLibraryItem>(json)
+    } catch (e: Exception) {
+      Log.e(tag, "saveScanResult: failed to deserialize LocalLibraryItem", e)
+      return call.reject("Invalid LocalLibraryItem JSON: ${e.message}")
+    }
+
+    val existing = DeviceManager.dbManager.getLocalLibraryItems().any { it.absolutePath == item.absolutePath }
+    if (existing) {
+      Log.d(tag, "saveScanResult: item already exists at ${item.absolutePath}, skipping")
+      return call.resolve(JSObject("{\"alreadyExists\":true}"))
+    }
+
+    DeviceManager.dbManager.saveLocalLibraryItem(item)
+    Log.d(tag, "saveScanResult: saved ${item.id} (${item.absolutePath})")
+    call.resolve(JSObject(jacksonMapper.writeValueAsString(item)))
+  }
+
+  @PluginMethod
   fun getMediaItemHistory(call:PluginCall) { // Returns device data
     Log.d(tag, "getMediaItemHistory called")
     val mediaId = call.getString("mediaId") ?: ""
