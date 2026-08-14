@@ -1,0 +1,34 @@
+FROM node:20-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-17-jdk-headless \
+    wget \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME to the installed JDK
+RUN echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> /etc/environment
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
+# Install Android SDK command-line tools
+RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" && \
+    wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" \
+         -O /tmp/cmdlinetools.zip && \
+    unzip -q /tmp/cmdlinetools.zip -d /tmp && \
+    mv /tmp/cmdline-tools "${ANDROID_HOME}/cmdline-tools/latest" && \
+    rm /tmp/cmdlinetools.zip
+
+# Accept licenses and install required SDK packages
+RUN yes | sdkmanager --licenses > /dev/null 2>&1 || true && \
+    sdkmanager \
+        "platform-tools" \
+        "platforms;android-35" \
+        "build-tools;35.0.0"
+
+WORKDIR /app
